@@ -1,12 +1,14 @@
+import sys
 import pickle
 import pandas as pd
-from utils.transforms import IQRCapper
+from src.transforms import IQRCapper
+import src.transforms
+sys.modules['src.transforms'] = src.transforms 
 
-with open("model/return_model.pkl", "rb") as f:
+with open("src/return_model.pkl", "rb") as f:
     artifacts = pickle.load(f)
 
 model = artifacts["model"]
-threshold = artifacts["threshold"]
 features = artifacts["features"]
 
 MODEL_VERSION = "1.0.0"
@@ -25,9 +27,8 @@ def predict_output(user_input: dict):
     class_1_index = list(model.classes_).index(1)
     positive_prob = probabilities[class_1_index]
 
-
-    pred = 1 if positive_prob >= threshold else 0
-
+    pred = model.predict(df)[0]
+      
     confidence = max(probabilities)
 
     class_probs = {
@@ -39,24 +40,11 @@ def predict_output(user_input: dict):
         "prediction": label_map[pred],
         "confidence": round(float(confidence), 4),
         "probability_return": round(float(positive_prob), 4),
-        "threshold": threshold,
         "class_probabilities": class_probs,
     }
 
 
-# Testing
-print(features)
 
-sample_input = {
-    "Page Views": 8,
-    "Session Duration": 3.629279,
-    "Traffic Source": "Paid",
-    "Time on Page": 2.071925,
-    "Previous Visits": 0
-}
-
-result = predict_output(sample_input)
-print(result)
 
 
 
